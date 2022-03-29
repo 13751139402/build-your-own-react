@@ -5,8 +5,8 @@
   "main": "index.js",
   "scripts": {
     "review": "parcel review.html",
-    "1_createElement_function": "parcel 1_createElement_function.html",
-    "2_render_function": "parcel 2_render_function.html",
+    "1.createElementFunction": "parcel 1.createElementFunction/index.html",
+    "2.renderFunction": "parcel 2.renderFunction/index.html",
     "4_fibers": "parcel 4_fibers.html",
     "5_renderAndCommit": "parcel 5_renderAndCommit.html",
     "6_Reconciliation": "parcel 6_Reconciliation.html",

@@ -16,12 +16,11 @@ const reactElement = React.createElement(
   React.createElement('a', null, 'bar'),
   React.createElement('b')
 );
-console.log('reactElement:', reactElement);
 const container = document.getElementById('root');
 ReactDOM.render(reactElement, container);
 
 // ========================== 手写React.createElement =========================
-// createElement将传入的参数编译为一个virtual node
+// createElement将传入的参数编译为一个element(virtual node)
 
 // children允许多个child,而不是需要一个元素包裹
 function createElement(type, props, ...children) {

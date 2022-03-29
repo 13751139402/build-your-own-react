@@ -1,3 +1,8 @@
+// fiber和element的区别
+// 1.type和props直接继承element,无区别
+// 2.增加了parent,child,sibling,等于强化过的element tree,用于并发模式找到下一个UnitOfWork
+// 3.增加了dom,映射关系是 element tree->fiber tree->dom tree
+
 function createElement(type, props, ...children) {
   return {
     type,
@@ -9,7 +14,6 @@ function createElement(type, props, ...children) {
     },
   };
 }
-
 function createTextElement(text) {
   return {
     type: 'TEXT_ELEMENT',
@@ -34,6 +38,7 @@ function createDom(fiber) {
 
   return dom;
 }
+// render函数只是触发并发模式
 function render(element, container) {
   nextUnitOfWork = {
     dom: container,
@@ -55,8 +60,13 @@ function workLoop(deadline) {
   requestIdleCallback(workLoop);
 }
 requestIdleCallback(workLoop); // requestIdleCallback是一直运行着
+
+// 三件事
+// 1.创建fiber的dom节点
+// 2.为fiber的每个child创建对应的fiber
+// 3.返回下一个fiber
 function performUnitOfWork(fiber) {
-  // ==================== 1. add dom node
+  // ==================== 1. 创建dom节点
   if (!fiber.dom) {
     fiber.dom = createDom(fiber);
   }
@@ -64,7 +74,7 @@ function performUnitOfWork(fiber) {
   if (fiber.parent) {
     fiber.parent.dom.appendChild(fiber.dom);
   }
-  // ==================== 2.each child we create a new fiber.
+  // ==================== 2.为每个child创建对应的fiber
   const elements = fiber.props.children;
   let index = 0;
   let prevSibling = null;
@@ -88,7 +98,7 @@ function performUnitOfWork(fiber) {
     prevSibling = newFiber;
     index++;
   }
-  // ==================== 3. return next unit of work 寻找下一个fiber,顺序为child sibling uncle
+  // ==================== 3. 返回下一个fiber,顺序为child, sibling, uncle
   if (fiber.child) {
     return fiber.child;
   }

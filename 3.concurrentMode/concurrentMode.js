@@ -1,3 +1,7 @@
+// concurrentMode:并线模式。大量的页面渲染操作会导致页面卡顿,用户操作停滞
+// 使用requestIdleCallback在浏览器进程闲置时进行页面渲染,防止阻塞页面
+// react把element切割成链表结构的Fibers,这样可以断断续续的进行页面更新
+
 // 此章节还跑不起来，只做教学
 function createElement(type, props, ...children) {
   return {
