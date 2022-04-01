@@ -2,6 +2,7 @@
 // 1.type和props直接继承element,无区别
 // 2.增加了parent,child,sibling,等于强化过的element tree,用于并发模式找到下一个UnitOfWork
 // 3.增加了dom,映射关系是 element tree->fiber tree->dom tree
+// 4.fiber的children element在props.children中
 
 function createElement(type, props, ...children) {
   return {
@@ -50,7 +51,6 @@ function render(element, container) {
 
 let nextUnitOfWork = null;
 function workLoop(deadline) {
-  console.log('workLoop');
   let shouldYield = false;
   while (nextUnitOfWork && !shouldYield) {
     nextUnitOfWork = performUnitOfWork(nextUnitOfWork);

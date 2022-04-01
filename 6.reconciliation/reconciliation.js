@@ -1,4 +1,9 @@
-// 之前只有新增，现在将render函数中收到的元素与提交给 DOM 的最后一个纤维树进行比较。进行删除和更新
+// 之前只有增,现在增加删改
+// 1.wipRoot     : 处于render阶段的fiber tree。
+//   currentRoot : 与dom对应的fiber tree,也就是上一次render的fiber tree
+//   alternate   : 每个fiber新增alternate属性,连接着wipRoot和currentRoot
+// 2.render-performUnitOfWork阶段新旧fiber对比进行打标effectTag
+// 3.commit阶段依据effectTag进行更新dom
 
 // 渲染流程图:
 // 1.workLoop：执行下一个unitOfWork, 或者跳出进行commit
@@ -44,7 +49,8 @@ const isProperty = (key) => key !== 'children' && !isEvent(key);
 const isNew = (prev, next) => (key) => prev[key] !== next[key];
 const isGone = (prev, next) => (key) => !(key in next);
 function updateDom(dom, prevProps, nextProps) {
-  // 删除旧的或者更改事件监听器
+  // 函数对比会转化为字符串再对比
+  // 删除new fiber不存在或者不相同的事件
   Object.keys(prevProps)
     .filter(isEvent)
     .filter((key) => !(key in nextProps) || isNew(prevProps, nextProps)(key))
@@ -53,7 +59,7 @@ function updateDom(dom, prevProps, nextProps) {
       dom.removeEventListener(eventType, prevProps[name]);
     });
 
-  // 添加新的事件监听器
+  // 设置新增的或者更改后的事件
   Object.keys(nextProps)
     .filter(isEvent)
     .filter(isNew(prevProps, nextProps))
@@ -62,7 +68,7 @@ function updateDom(dom, prevProps, nextProps) {
       dom.addEventListener(eventType, nextProps[name]);
     });
 
-  // Remove old properties
+  // 删除new fiber不存在的属性
   Object.keys(prevProps)
     .filter(isProperty)
     .filter(isGone(prevProps, nextProps))
@@ -70,7 +76,7 @@ function updateDom(dom, prevProps, nextProps) {
       dom[name] = '';
     });
 
-  // Set new or changed properties
+  // 设置新增的或者更改后的属性
   Object.keys(nextProps)
     .filter(isProperty)
     .filter(isNew(prevProps, nextProps))
@@ -94,7 +100,7 @@ function commitWork(fiber) {
   if (fiber.effectTag === 'PLACEMENT' && fiber.dom != null) {
     domParent.appendChild(fiber.dom);
   } else if (fiber.effectTag === 'DELETION') {
-    domParent.removeChild(fiber.d);
+    domParent.removeChild(fiber.dom);
   } else if (fiber.effectTag === 'UPDATE' && fiber.dom != null) {
     updateDom(fiber.dom, fiber.alternate.props, fiber.props);
   }
@@ -163,19 +169,20 @@ function performUnitOfWork(fiber) {
   }
 }
 
-// 创建fiber children: 对比current(old  fiber)与elements，创建拥有effectTag的Fiber
+// 创建fiber children: 对比oldFiber与elements，创建拥有effectTag的Fiber
 // Fiber是一个链表+树的结构
 function reconcileChildren(wipFiber, elements) {
   let index = 0;
-  let oldFiber = wipFiber.alternate && wipFiber.alternate.child;
+  let oldFiber = wipFiber.alternate?.child;
   let prevSibling = null;
+  // oldFiber是链表结构,elements是数组机构
   while (index < elements.length || oldFiber != null) {
     const element = elements[index];
     let newFiber = null;
     // 对比oldFiber和element,三个策略:
     // 1.如果旧的Fiber和新的元素具有相同的类型，我们可以保留DOM节点并使用新的props更新它
-    // 2.如果类型不同并且有一个new element,则意味着我们需要创建一个新的dom
-    // 3.如果类型不同并且有一个old fiber,则意味着我们需要删除旧的dom
+    // 2.如果有element且类型不同,则意味着我们需要创建一个新的dom
+    // 3.如果有fiber且类型不同,则意味着我们需要删除旧的dom
     // react还设置了key,用于更好的检测children改变了数组中的位置
     const sameType = oldFiber && element && element.type === oldFiber.type;
     if (sameType) {

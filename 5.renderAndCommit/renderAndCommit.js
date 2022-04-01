@@ -42,6 +42,7 @@ function commitRoot() {
   wipRoot = null;
 }
 
+// commit阶段每个fiber都有了dom,commitWork依据fiber递归添加到dom tree中
 function commitWork(fiber) {
   if (!fiber) return;
   const domParent = fiber.parent.dom;
@@ -51,6 +52,7 @@ function commitWork(fiber) {
   commitWork(fiber.sibling);
 }
 
+//
 function render(element, container) {
   wipRoot = {
     // 用于render后commit
@@ -63,7 +65,7 @@ function render(element, container) {
 }
 
 let nextUnitOfWork = null;
-let wipRoot = null;
+let wipRoot = null; // wip:	Work In Progress 正在render阶段的fiber root
 function workLoop(deadline) {
   let shouldYield = false;
   while (nextUnitOfWork && !shouldYield) {
