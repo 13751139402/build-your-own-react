@@ -1,10 +1,6 @@
-// 渲染流程图:
-// 1.workLoop：执行下一个unitOfWork, 或者跳出进行commit
-// 2.performUnitOfWork:
-//    1.createDom创建fiber参数的dom
-//    2.reconcileChildren创建fiber参数的children fiber
-//    3.返回下一个fiber
-// 3.commitRoot将fiber dom改动更新到页面中
+// 函数组件只在两点有变动
+// 1.render-performUnitOfWork中检验到element为function会执行函数拿到这个函数组件的children element。之后走下面的逻辑
+// 2.commitWork中于Fiber tree映射为dom tree的时候会跳过了function fiber
 
 function createElement(type, props, ...children) {
   return {
@@ -12,7 +8,7 @@ function createElement(type, props, ...children) {
     props: {
       ...props,
       children: children.map((child) =>
-        typeof child === 'object' ? child : createTextElement(child)
+        typeof child === "object" ? child : createTextElement(child)
       ),
     },
   };
@@ -20,7 +16,7 @@ function createElement(type, props, ...children) {
 
 function createTextElement(text) {
   return {
-    type: 'TEXT_ELEMENT',
+    type: "TEXT_ELEMENT",
     props: {
       nodeValue: text,
       children: [],
@@ -29,16 +25,16 @@ function createTextElement(text) {
 }
 function createDom(fiber) {
   const dom =
-    fiber.type == 'TEXT_ELEMENT'
-      ? document.createTextNode('')
+    fiber.type == "TEXT_ELEMENT"
+      ? document.createTextNode("")
       : document.createElement(fiber.type);
 
   updateDom(dom, {}, fiber.props);
   return dom;
 }
-// 事件属性要特别处理
-const isEvent = (key) => key.startsWith('on');
-const isProperty = (key) => key !== 'children' && !isEvent(key);
+
+const isEvent = (key) => key.startsWith("on");
+const isProperty = (key) => key !== "children" && !isEvent(key);
 const isNew = (prev, next) => (key) => prev[key] !== next[key];
 const isGone = (prev, next) => (key) => !(key in next);
 function updateDom(dom, prevProps, nextProps) {
@@ -65,7 +61,7 @@ function updateDom(dom, prevProps, nextProps) {
     .filter(isProperty)
     .filter(isGone(prevProps, nextProps))
     .forEach((name) => {
-      dom[name] = '';
+      dom[name] = "";
     });
 
   // Set new or changed properties
@@ -88,18 +84,18 @@ function commitRoot() {
 function commitWork(fiber) {
   if (!fiber) return;
   let domParentFiber = fiber.parent;
-  // 组件函数节点有fiber(APP), 但是没有dom
   // 因为组件函数的fiber没有dom,commitWork为了appendChild,得先找到parentDom
+  // 相当于Fiber tree映射为dom tree的时候跳过了function fiber
   while (!domParentFiber.dom) {
     domParentFiber = domParentFiber.parent;
   }
   const domParent = domParentFiber.dom;
   // 如果为placement放置,则把
-  if (fiber.effectTag === 'PLACEMENT' && fiber.dom != null) {
+  if (fiber.effectTag === "PLACEMENT" && fiber.dom != null) {
     domParent.appendChild(fiber.dom);
-  } else if (fiber.effectTag === 'UPDATE' && fiber.dom != null) {
+  } else if (fiber.effectTag === "UPDATE" && fiber.dom != null) {
     updateDom(fiber.dom, fiber.alternate.props, fiber.props);
-  } else if (fiber.effectTag === 'DELETION') {
+  } else if (fiber.effectTag === "DELETION") {
     commitDeletion(fiber, domParent);
   }
   // 递归将dom添加到页面中
@@ -117,12 +113,10 @@ function commitDeletion(fiber, domParent) {
 
 function render(element, container) {
   wipRoot = {
-    // 用于render后commit
     dom: container,
     props: {
       children: [element],
     },
-    // 将旧的fiber tree保存起来，用于diff
     alternate: currentRoot,
   };
   deletions = [];
@@ -132,18 +126,15 @@ function render(element, container) {
 let nextUnitOfWork = null;
 let wipRoot = null;
 let currentRoot = null;
-let deletions = null; // 保存需要删除的fiber
+let deletions = null;
 
-// 并发更新
 function workLoop(deadline) {
   let shouldYield = false;
   while (nextUnitOfWork && !shouldYield) {
     nextUnitOfWork = performUnitOfWork(nextUnitOfWork);
-    // requestIdleCallback会当浏览器住进程空闲时触发，每一帧渲染完成的空闲时间,如果超过帧完成时间则shouldYield,把主进程留给优先级更高的操作,等待下一次空闲再渲染
-    shouldYield = deadline.timeRemaining() < 1; // 当前帧剩余数小于1毫秒则让出主线程
+    shouldYield = deadline.timeRemaining() < 1;
   }
   if (!nextUnitOfWork && wipRoot) {
-    // 当渲染完成后，再commit一次性更新页面
     commitRoot();
   }
   requestIdleCallback(workLoop);
@@ -174,7 +165,7 @@ function performUnitOfWork(fiber) {
   }
 }
 // 处理函数组件节点的更新流程,运行函数获得children fiber
-// 函数的fiber都是没有dom的，后面commitWork会处理
+// 函数fiber没有dom的,后面commitWork会处理
 function updateFunctionComponent(fiber) {
   const children = [fiber.type(fiber.props)]; // fiber为函数组件，运行后返回element结构
   reconcileChildren(fiber, children);
@@ -212,7 +203,7 @@ function reconcileChildren(wipFiber, elements) {
         dom: oldFiber.dom, // 这里会沿用old dom,当new Fiber进入performUnitOfWork就不再创建新的dom
         parent: wipFiber,
         alternate: oldFiber,
-        effectTag: 'UPDATE', // 新增的属性以后会在commit阶段使用
+        effectTag: "UPDATE", // 新增的属性以后会在commit阶段使用
       };
     }
     // 注意看下方两个if,如果一个dom type但是新旧fiber都存在,会锚中两个if,即删除原来的再创建新的dom
@@ -224,13 +215,13 @@ function reconcileChildren(wipFiber, elements) {
         dom: null,
         parent: wipFiber,
         alternate: null,
-        effectTag: 'PLACEMENT', // PLACEMENT:放置
+        effectTag: "PLACEMENT", // PLACEMENT:放置
       };
     }
     if (oldFiber && !sameType) {
       // 存在oldFiber,但是element可能不存在或者类型不同,删除oldFiber节点
       // 这种情况不需要newFiber,而是给oldFiber添加effect,到commit阶段会删除dom
-      oldFiber.effectTag = 'DELETION';
+      oldFiber.effectTag = "DELETION";
       deletions.push(oldFiber);
     }
 
@@ -254,14 +245,12 @@ const Didact = {
   render,
 };
 
-// 函数组件
-// 1.函数fiber来源于组件函数,并没有dom node
-// 2.children来源于组件函数,并不是props
+// 函数fiber来源于组件函数,并没有dom node
 /** @jsx Didact.createElement */
 function App(props) {
   return <h1>Hi {props.name}</h1>;
 }
-const element = <App name='foo' />;
+const element = <App name="foo" />;
 // jsx转化后就是下面:
 // function App(props) {
 //   return Didact.createElement('h1', null, 'Hi ', props.name);
@@ -269,5 +258,5 @@ const element = <App name='foo' />;
 // const element = Didact.createElement(App, {
 //   name: 'foo',
 // });
-const container = document.getElementById('root');
+const container = document.getElementById("root");
 Didact.render(element, container);

@@ -10,7 +10,7 @@
     "4.fibers": "parcel 4.fibers/index.html",
     "5.renderAndCommit": "parcel 5.renderAndCommit/index.html",
     "6.reconciliation": "parcel 6.reconciliation/index.html",
-    "7_function_components": "parcel 7_function_components.html",
+    "7.functionCompoents": "parcel 7.functionCompoents/index.html",
     "8_hooks": "parcel 8_hooks.html",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
