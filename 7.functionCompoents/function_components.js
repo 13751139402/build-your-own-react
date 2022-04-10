@@ -1,5 +1,5 @@
 // 函数组件只在两点有变动
-// 1.render-performUnitOfWork中检验到element为function会执行函数拿到这个函数组件的children element。之后走下面的逻辑
+// 1.render-performUnitOfWork中检验到element为function会执行函数拿到这个函数组件的返回值(children element)。之后走下面的逻辑
 // 2.commitWork中于Fiber tree映射为dom tree的时候会跳过了function fiber
 
 function createElement(type, props, ...children) {
